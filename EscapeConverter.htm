@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Transitional//EN'
+'http://www.w3.org/TR/xhtmll/DTD/xhtmll-transitional.dtd'>
+
+<html xmlns='http://www.w3.org/1999/xhtml'>
+
+<head>
+    <title>Escape Converter</title>
+    <!-- 
+    // EscapeConverter
+    //
+    // This is a Nametag.s app which converts plaintext to escaped strings, 
+    // and back again.
+    //
+    // d.swartzendruber, c2014
+    // MIT License: http://opensource.org/licenses/MIT   
+    -->
+    
+    <link href="http://cdn.tagos.io/verbs.css" media="all" rel="stylesheet" type="text/css"></link>
+    <script src="http://cdn.tagos.io/NametagTemplates.min.js" type="text/javascript"></script>
+    
+    <style>
+        html{padding:0; margin: 0;}
+        body{padding:0; margin: 0;}
+        .nopad{padding:0; margin: 0;}
+        .wrapx{ overflow-x:none !important;}
+    </style>
+    
+</head>
+
+
+<script id="EscapeConverter" type="text/nametag">
+    <!-- markup shml -->
+    
+    isfirsttime:true,
+    
+    clearAreaForFirstTime:function(clearanyway){
+        if(self.isfirsttime || clearanyway){
+            self.$named('convertarea').val("");
+            self.isfirsttime = false;
+        }
+    },
+    StringParse:function(toplaintext){
+        // fetch user text from textarera
+        var areatext = self.$named('convertarea').val();
+    
+        // strided lists:
+        //    first pair matches regex for unformatted chars to escaped text. 
+        //    second pair matches regex for escaped chars to printable chars.
+        var encodeFromArray = new Array(/\\/g,/'/g,/"/g,/\r\n/g,/[\r\n]/g,/\t/g,new RegExp('/','g'));
+        var encodeToArray = new Array('\\\\','\\\'','\\\"','\\n','\\n','\\t','\\\/');         
+        var decodeFromArray = new Array(/\\\\/g,/\\'/g,/\\\"/g,/\\n/g, /\\t/g,new RegExp('\\\\/','g'));
+        var decodeToArray = new Array("\\","'",'"','\n','\t','\/');
+        // in writing these I discovered two rules:
+        //
+        // 1) The regex to find the raw version of a character will almost always be the escaped version for a string literal.
+        //
+        // 2) You cannot find a single forward slash using any form of a 
+        // literal RegExp.  You must call its constructor for that one. 
+                
+        if(areatext !== ""){
+            for( var x = 0; x {- encodeFromArray.length; x++ ) {
+                areatext = areatext.replace( toplaintext ? decodeFromArray[x] : encodeFromArray[x] , toplaintext ?  decodeToArray[x] : encodeToArray[x] );
+            }
+        }
+        
+        // deal with outside quotes
+        areatext = toplaintext ? areatext.replace(/^["']/m,"").replace(/["']$/m,"") : "\'"+areatext+"\'" ;
+        self.$named('convertarea').val(areatext); 
+        self.isfirsttime = false;
+    }
+    
+    
+
+    <view class="center"
+          width="%%{self.parent.width}"
+          height="%%{self.parent.height}">
+                    
+        <div class="width100" name="buttoncontainer">
+            <input type="button" class="button width33 rightpadded"
+                onclick="self.root.StringParse()"
+                value="Text to String">
+            <input type="button" class="button width33 rightpadded"
+                onclick="self.root.clearAreaForFirstTime(true)"
+                value="Clear">        
+            <input type="button" class="button width33 leftpadded"
+                onclick="self.root.StringParse(true)"
+                value="String to Text">
+                
+        <view class="rel" width="%%{self.parent.width}" height="%%{self.parent.height;;value-self.offsetTop}" traits="SizedToWindow" name="convertareaview">
+            onHeight:"%%{self.height;;self.$child('convertarea').height(value)}",
+            onWidth:"%%{self.width;;self.$child('convertarea').width(value)}",
+            
+            // We need to populate the textarea on __ready__ using jQuery because it's the only way to get nametag to respect line breaks or carriage returns in a textarea
+            __ready__:function(){
+                self.$child('convertarea').val("    Occasionally you need to convert a block of unformatted text to a Javascript string so you can assign it to a variable.\n\n    This widget lets you do that, or reverse the process and convert an escaped Javascript string into normal text.\n\n    Paste your text to convert here.  Then click a button above."); 
+            }
+            
+            <textarea class="width100 left clickable"
+                      name="convertarea"
+                      __click__="self.root.clearAreaForFirstTime()">
+</script>
+
+<script id="SizedToWindow" type="text/nametag">
+    __init__:function(){
+        var resize = function(){
+            self.set('width', window.innerWidth-5);
+            self.set('height', window.innerHeight-3);
+        };
+
+        $(window).bind("resize", resize);
+
+        Nametag.GUI.focus.setLayer(self);
+        Nametag.GUI.focus.setWindow(self);
+
+        resize();
+    }
+</script>
+
+<div class="nametag" template="EscapeConverter" traits="SizedToWindow"/>
+
+</body>
+</html>
