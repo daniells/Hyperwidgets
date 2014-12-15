@@ -3,7 +3,7 @@
 
 ##### What
 
-Some of these are for (TagOS)[http://desktop.tagos.io/], and some are HTML for deployment as standalone site widgets.  They are all easily portable between these contexts.
+Some of these are for [TagOS](http://desktop.tagos.io/), and some are HTML for deployment as standalone site widgets.  They are all easily portable between these contexts.
 
 ##### Why
 
@@ -13,11 +13,11 @@ Some of these are for (TagOS)[http://desktop.tagos.io/], and some are HTML for d
 
 ##### Where
 
-You may deploy these on your own site freely and without restriction, as long as you comply with the respective OSS licence.
+You may deploy these on your own site freely and without restriction, as long as you comply with the respective OSS license.
 
 ##### When
 
-I decided to start making very simple, reusable widgets anyone can share shortly after offical [Tagos.io](http://tagos.io) launch in late Nov, 2014.
+I decided to start making very simple, reusable widgets anyone can share shortly after official [Tagos.io](http://tagos.io) launch in late Nov, 2014.
 
 ##### How
 

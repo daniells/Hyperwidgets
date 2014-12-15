@@ -1,7 +1,7 @@
 // CharacterChart
 //
 // This is a TagOS app intended to print a chart of all
-// possible ASCII chracters and thier numeric character
+// possible ASCII characters and their numeric character
 // code equivalents.
 //
 // This version reveals a bug in text processing: 
