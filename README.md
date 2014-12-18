@@ -5,6 +5,13 @@
 
 Some of these are for [TagOS](http://desktop.tagos.io/), and some are HTML for deployment as standalone site widgets.  They are all easily portable between these contexts.
 
+Examples in this repo
+
+* Character Chart: intended to print a table of all possible HTML ASCII character entities programatically.  Instead it demonstrates a current bug :)
+* Escape Converter: Allows you to escape any raw text in a textarea into a JS string, or the reverse.
+* Folder Size:  Prints a list of top level TagOS directories and the space used by the files in them.
+* Password Safe: An encrypted password/account manager. This is not a tiny example and may be moved into its own repo after it gets to a certain size.
+
 ##### Why
 
 * Examples for TagOS
@@ -13,7 +20,7 @@ Some of these are for [TagOS](http://desktop.tagos.io/), and some are HTML for d
 
 ##### Where
 
-You may deploy these on your own site freely and without restriction, as long as you comply with the respective OSS license.
+You may deploy these on your own sites freely and without restriction, as long as you comply with the respective OSS licenses.
 
 ##### When
 

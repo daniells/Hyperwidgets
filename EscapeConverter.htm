@@ -5,19 +5,26 @@
 
 <head>
     <title>Escape Converter</title>
-    <!-- 
-    // EscapeConverter
-    //
-    // This is a Nametag.js app which converts plaintext to escaped strings, 
-    // and back again.
-    //
-    // d.swartzendruber, c2014
-    // MIT License: http://opensource.org/licenses/MIT   
+    <!--
+        EscapeConverter
+        
+        This is a Nametag.js app which converts plaintext to escaped strings-
+        and back again.
+
+        d.swartzendruber, c2014
+        MIT License: http://opensource.org/licenses/MIT   
     -->
     
-    <link href="http://cdn.tagos.io/verbs.css" media="all" rel="stylesheet" type="text/css"></link>
-    <script src="http://cdn.tagos.io/NametagTemplates.min.js" type="text/javascript"></script>
+    <!--link href="http://cdn.tagos.io/verbs.css" media="all" rel="stylesheet" type="text/css"></link-->
+    <link href="../nametag/verbs.css" media="all" rel="stylesheet" type="text/css"></link>
     
+    <!--script src="http://cdn.tagos.io/NametagTemplates.min.js" type="text/javascript"></script-->
+    <script src="../nametag/NametagTemplates.min.js" type="text/javascript"></script>
+    <!-- script src="../nametag/src/jquery-2.0.0.min.js" type="text/javascript"></script>
+    <script src="../nametag/src/jquery-tmpl-nametag.js" type="text/javascript"></script>
+    <script src="../nametag/src/JSHint.js" type="text/javascript"></script>
+    <script src="../nametag/src/NametagBasic.js" type="text/javascript"></script -->
+       
     <style>
         html{padding:0; margin: 0;}
         body{padding:0; margin: 0;}
@@ -31,31 +38,37 @@
 <script id="EscapeConverter" type="text/nametag">
     <!-- markup shml -->
     
+    // flag to tell us if the user has touched the text area yet
     isfirsttime:true,
     
+    // Clear textarea
     clearAreaForFirstTime:function(clearanyway){
         if(self.isfirsttime || clearanyway){
             self.$named('convertarea').val("");
             self.isfirsttime = false;
         }
     },
+    
+    // Our main conversion function
     StringParse:function(toplaintext){
         // fetch user text from textarera
         var areatext = self.$named('convertarea').val();
     
-        // strided lists:
-        //    first pair matches regex for unformatted chars to escaped text. 
-        //    second pair matches regex for escaped chars to printable chars.
+        // Strided lists:
+        //    First pair matches regex for unformatted chars to escaped text. 
+        //    Second pair matches regex for escaped chars to printable chars.
+        //
         var encodeFromArray = new Array(/\\/g,/'/g,/"/g,/\r\n/g,/[\r\n]/g,/\t/g,new RegExp('/','g'));
         var encodeToArray = new Array('\\\\','\\\'','\\\"','\\n','\\n','\\t','\\\/');         
+        //
         var decodeFromArray = new Array(/\\\\/g,/\\'/g,/\\\"/g,/\\n/g, /\\t/g,new RegExp('\\\\/','g'));
         var decodeToArray = new Array("\\","'",'"','\n','\t','\/');
-        // in writing these I discovered two rules:
         //
-        // 1) The regex to find the raw version of a character will almost always be the escaped version for a string literal.
+        // In writing these I discovered two rules:
         //
-        // 2) You cannot find a single forward slash using any form of a 
-        // literal RegExp.  You must call its constructor for that one. 
+        // 1) The regex to find a raw character will almost always be the escaped version for a string literal.
+        //
+        // 2) You cannot find a single forward slash using any form of a /literal/ RegExp.  You must call its constructor with 4 \ escape slashes. 
                 
         if(areatext !== ""){
             for( var x = 0; x {- encodeFromArray.length; x++ ) {
@@ -65,7 +78,11 @@
         
         // deal with outside quotes
         areatext = toplaintext ? areatext.replace(/^["']/m,"").replace(/["']$/m,"") : "\'"+areatext+"\'" ;
+        
+        // 
         self.$named('convertarea').val(areatext); 
+        
+        // set the flag that prevents click-clearing the textarea
         self.isfirsttime = false;
     }
     
