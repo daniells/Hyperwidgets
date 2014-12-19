@@ -1,53 +1,62 @@
-// PasswordSafe
-//
-// This is a TagOS app which manages sensitive account
-// information and stores it with dual AES encrypton:
-// once using implicit TrustFS encryption, and a 
-// second time using AES and a custom password.
-//
-// You may export data in plaintext, via copy-paste,
-// but this app will never write plaintext to media.
-//
-// The advantage of this over -all other- password
-// managers is the combination of these features:
-//
-// 1) Data held in escrow cannot be read
-// 2) Data held in escrow cannot be identified
-// 3) Data held in escrow can be redundantly distributed
-// 4) Platform agnostic
-// 5) No special client software or browser plugins
-//
-// d.swartzendruber, c2014
-// All rights reserved, but will probably be GPL eventually
-
-
-// Write test passwd file
-// fat.write("/Prog/Passwords/"+TrustOS.uuid(7)+".password",TrustOS.encryptAES(Base64.encode(JSON.stringify({title:TrustOS.uuid(10),url:"http:\/\/foo.bar",password:"foo",username:"my name",email:"foo@bar.baz"})),"asdf"));
-//
-// Read 1st test passwd file
-// JSON.parse(Base64.decode(TrustOS.decryptAES(fat.read("/Prog/Passwords/"+fat.listfiles("/Prog/Passwords/")[0]),"asdf")));  
-//
-// Proof of round trip crypt
-//var password = "asdf"; Base64.decode(TrustOS.decryptAES(    TrustOS.encryptAES(Base64.encode(JSON.stringify({})),password)  ,password)));
+/*  
+ * PasswordSafe v1
+ *
+ * d.l.s. 2014.12.19
+ */ 
 
 <% markup shml %>
 
-<script id="aboutpane" type="text/nametag">
+<fullview>
+    /* The top-level wrapper for the Manager.
+    */
+    
+    // When the main content container is loaded, create a menu item for Help/About
+    __loaded__:function(){
+        self.root.menudata = [
+            {name:'Export', width:210, items:[    
+                {label:'Export Plaintext', shift:true, shortcut:'a', action:function(app){
+                    self.lookup('Application').set('pane','@@ExportPlaintext');
+                }}]},
+            {name:'Help', width:210, items:[    
+                {label:'About', shift:true, shortcut:'a', action:function(app){
+                    self.lookup('Application').set('pane','@@AboutPane');
+                }}]}
+        ]; 
+    },
+    
+    // Decide which pane we're going to show the user, depending on whether there are files in the Passwords folder
+    __ultimately__:function(){
+    
+        var nofiles = self.directory.cd("Passwords").hasFiles();
+        self.lookup("Application").set("pane", nofiles ? "@@ReturningUserPane" : "@@NewUserPane");
+    }
+    
+    <Manager name="Manager" 
+             width="%%{self.parent.width}" 
+             height="%%{self.parent.height}"
+             autoload="%{false}">  
+
+
+<script id="AboutPane" type="text/nametag">
+    
+    app:self.lookup('Application'),
+    
     __ready__:function(){
         $(self).removeClass("scrollable");
     }
     
     <view class="abs class bordered rounded left scrollable margined"
-        height="%%{self.lookup('Application').height ;; value*0.9 }"
-        width="%%{self.lookup('Application').width ;; value*0.8 }"
-        left="%%{self.lookup('Application').width;; value*0.1}"
-        top="%%{self.lookup('Application').height;; value*0.025}">
-        
+        height="%%{self.parent.app.height ;; value*0.9 }"
+        width="%%{self.parent.app.width ;; value*0.8 }"
+        left="%%{self.parent.app.width;; value*0.1}"
+        top="%%{self.parent.app.height;; value*0.025}">
 
         <div>
             PasswordSafe is a trustworthy tool for storing the private account info you use every day.
+            
         <div>
-            You won't find its full feature list in any other password manager.
+            You won't find its full feature list in any other password Manager.
+            
         <div>
             <ul>
                 <li> Double AES encryption
@@ -55,143 +64,166 @@
                 <li> Storage service cannot read password data
                 <li> Storage service cannot know you are storing password data
                 <li> Storage can be distributed
-                <li> Import/Export in a human-readable text format
-                <li> Import\/Export in AES cyphertext
                 <li> 100% verifiable source code
                 <li> Open source GUI
                 <li> Free
+                
         <div>
             For more information and feature requests, email daniel@tagos.io
 
-<script id="newuserpane" type="text/nametag">
+<script id="NewUserPane" type="text/nametag">
+
+    /* This pane is what the user sees if there is no saved password data:
+    *  i.e. they cleared thier list prior to closing, or they are a new user.
+    */
     
     // When the user clicks the [Set Password] button
     setNewPassword:function(){
         
+        var app = self.lookup("Application");
+        
         // get the values from the two password fields
-        var masterpassword = self.$named("masterpassword").val();
-        var confirmpassword = self.$named("confirmpassword").val();
+        var master_password = self.$named("master_password").val();
+        var confirm_password = self.$named("confirm_password").val();
         
         // if the passwords didn't match
-        if(masterpassword !== confirmpassword) {
-            //inform the user of thier mistake and prompt them to try again
-            self.$named("passwordmessage").text("Your passwords do not match.  Please try again.").addClass("fgred");
-        } 
-        // if the passwords the user entered matched, set up thier instance
+        if(master_password !== confirm_password) 
+            //inform the user of their mistake and prompt them to try again
+            self.$named("PasswordMessage").text("Your passwords do not match.  Please try again.").addClass("evenbigger fgred");
+        
+        // if the passwords the user entered matched, set up their instance
         else{
-            //Tell the user thier passwords matched.  They should not see this message for very long, so it's one word
-            self.$named("passwordmessage").html("").text("Success!").addClass("big fggreen");
+            //Tell the user their passwords matched.  They should not see this message for very long, so it's one word
+            self.$named("PasswordMessage").html("").text("Success!").addClass("big fggreen");
             
-            // Get a reference to the manager, which is the main interface for the program
-            var manager = self.lookup("Application").api.named("manager");
+            // Get a reference to the Manager, which is the main interface for the program
+            var Manager = app.api.named("Manager");
             // Get a fatcd object of the password files directory
             var passwordscd = self.root.directory.cd("/Passwords");
             // Get a list of the password files in the directory ?? limit this to .password  files
-            var passwordfilelist = passwordscd.files();
-            // Set the master password on the manager.  this only exists in memory and is cleared when the applicaiton is closed.
-            manager.masterpassword = masterpassword;
+            var password_file_list = passwordscd.files();
+            // Set the master password on the Manager.  this only exists in memory and is cleared when the application is closed.
+            Manager.master_password = master_password;
             
             // Example account data to write for the new user
             var example = {
                 title:"Example Account",
-                username:"yourloginname",
+                username:"YourLoginName",
                 password:"correct horse battery staple",
                 url:"http:\/\/example.com",
                 email:"you@example.com"
             };
-            // Write an example password file encrypted with thier master password.
-            // As long as there is at least one file in thier Passwords folder, the program regocnizes them as a returning user.
-            var examplewrites = fat.write(
+            // Write an example password file encrypted with their master password.
+            // As long as there is at least one file in their Passwords folder, the program recognizes them as a returning user.
+            var example_writes = fat.write(
                 passwordscd.path()+"/"+TrustOS.uuid(7)+".password",
                 TrustOS.encryptAES(
                     Base64.encode(JSON.stringify(example)),
-                    manager.masterpassword
+                    Manager.master_password
                 )
             );
             
-            // If a verified file write occured
-            if(examplewrites){
-                    // Load the manager for the first time.
-                    manager.reload();
-                    //Close the setpassword pane
+            // If a verified file write occurred
+            if(example_writes){
+                    // Load the Manager for the first time.
+                    Manager.reload();
+                    //Close the ReturningUserPane
                     self.lookup('Application').set('pane',false);
             }
-                // if thier TagOS instance isn't broken they should never see this.
+                // if their TagOS instance isn't broken they should never see this.  
+                // TagOS journaling and LocalFAT caching ensure local writes always succeed.
+                // ...but just in case...
             else{
-                self.$named("passwordmessage").html("").text("I was unable to write to your filesystem. Something is seriously wrong. Try restarting your TagOS instance.").addClass("fgred");
+                self.$named("PasswordMessage").html("").text("I was unable to write to your filesystem. Something is seriously wrong. Try restarting your TagOS instance.").addClass("fgred");
             }
         }
     }
 
     
     
-    <div class="center padded fgblue" name="passwordmessage">
+    <div class="center padded fgblue" name="PasswordMessage">
         <div class="evenbigger">Welcome, new user!
         <div>Make up a new password.  
-        <div class="smaller">This password will encrypt all your account info, so <a href="https:\/\/xkcd.com\/936" target="_blank">choose wisely</a>.
-    <input type="password" name="masterpassword" class="width75">
+        <div class="smaller">
+            This password will encrypt all your account info, so <a href="https:\/\/xkcd.com\/936" target="_blank">choose wisely</a>.
+        
+    <input type="password" name="master_password" class="width75">
     
     <div>Confirm password:
-    <input type="password" name="confirmpassword" class="width75">
+    <input type="password" name="confirm_password" class="width75">
     
     <div>
     <input type="button" class="button" __click__="self.root.setNewPassword()" value="Set Password">
 
 
-<script id="returninguserpane" type="text/nametag">
+<script id="ReturningUserPane" type="text/nametag">
+    
+    /* This pane is what the user sees if there is Data saved in thier password directory
+    *  i.e. they are a returning user.
+    */
 
     // We use this function to test the first file in the Passwords folder.  
-    // If it successfully decrypts we remove the pane and load the manager
+    // If it successfully decrypts we remove the pane and load the Manager
     // If it fails we inform the user (s)he should try again.
     unlockPasswords:function(){
         
-        // get the value from thepassword field
-        var masterpassword = self.$named("masterpassword").val();        
+        var app = self.lookup("Application");
+        
+        // get the value from the password field
+        var master_password = self.$named("master_password").val();        
         // if the field wasn't empty (ie. the user did enter a password)
-        if(masterpassword){
+        if(master_password){
             
-            // Get a reference to the manager, which is the main interface for the program
-            var manager = self.lookup("Application").api.named("manager");
-            
-            //console.log(manager);
+            // Get a reference to the Manager, which is the main interface for the program
+            var Manager = app.api.named("Manager");
             
             // Get a fatcd object of the password files directory
             var passwordscd = self.root.directory.cd("/Passwords");
             
             // Get a list of the password files in the directory ?? limit this to .password  files
-            var passwordfilelist = passwordscd.files();
+            var password_file_list = passwordscd.files();
     
-            // Get the path (string) of the Password files folder.
-            var decryptsuccess = manager.decryptStringToObj(passwordscd.read(passwordfilelist[0]), masterpassword);
+            // Get the path (a string) of the Password files folder.
+            var decrypt_success = Manager.decryptStringToObj(passwordscd.read(password_file_list[0]), master_password);
     
-            if(decryptsuccess){
-                // Set the master password on the manager.  this only exists in memory and is cleared when the applicaiton is closed.
-                manager.masterpassword = masterpassword;
+            if(decrypt_success){
+                // Set the master password on the Manager.  this only exists in memory and is cleared when the application is closed.
+                Manager.master_password = master_password;
                 
-                //Tell the user thier passwords matched.  They should not see this message for very long, so it's one word
-                self.$named("passwordmessage").html("").text("Success!").addClass("big fggreen");
+                //Tell the user their passwords matched.  They should not see this message for very long, if at all, so it's one word
+                self.$named("PasswordMessage").html("").text("Success!").addClass("big fggreen");
                 
-                // Load the manager for the first time.
-                manager.reload();
-                //Close the setpassword pane
+                // Load the Manager for the first time.
+                Manager.reload();
+                //Close the ReturningUserPane
                 self.lookup('Application').set('pane',false);
             }
             else{
                 // Inform the user the password was wrong
-                self.$named("passwordmessage").text("Your password seems wrong.  Please try again.").addClass("fgred");
+                self.$named("PasswordMessage").text("Your password seems wrong.  Please try again.").addClass("fgred");
             }
         }
     }
     
-    <div class="center padded" name="passwordmessage">Welcome back! Please enter your master password.
-    <input type="password" name="masterpassword" class="width75">
+    <div class="center padded" name="PasswordMessage">
+        Welcome back! Please enter your master password.
+    
+    <input type="password" name="master_password" class="width75">
 
     <div>
-    <input type="button" class="button" __click__="self.root.unlockPasswords()" value="Unlock Passwords">
+        <input type="button" 
+               class="button" 
+               __click__="self.root.unlockPasswords()" 
+               value="Unlock My Data">
 
     
-<script id="manager" type="text/nametag">
+<script id="Manager" type="text/nametag">
     
+    /* The Manager contains the filelist and the inspector
+    *  It is also the container of our methods for encryption and decryption
+    */
+    
+    // The manager is not loaded until either the NewUserPane or the ReturningUserPane .reload()s it
     autoload:false,
     
     // Encrypts anything that can be passed to JSON.parse()
@@ -204,7 +236,7 @@
 
     //Takes a string from a fat file and password
     // returns an object if decryption succeeds
-    // Returns false if decruyption fails, and logs error to console
+    // Returns false if decryption fails, and logs error to console
     decryptStringToObj:function(string, password){
         try{
             return JSON.parse(
@@ -217,40 +249,52 @@
             );
         }catch(err){
             var error = "There was an error decrypting/parsing your password entry. Error was: " + err;
-            console.log(error);
-            //Nametag.Debugger.error(error);
+            Nametag.Debugger.error(err);
         }
         return false;
     }
 
-    <view class="abs" name="listbuttons"
+    <view name="ListButtons" class="abs" 
         width="%%{self.parent.width;;value*.33}"
         height="%%{self.parent.height}">
         
+        /* This tag contains a couple buttons for manipulating list items.
+        */
+        
+        // This is our main method for saving password file data.  If fields are empty it chooses defaults.
         saveEntry:function(filename, entry){
+            
+            var app = self.lookup("Application");
             entry = entry || {};
             filename = (filename || TrustOS.uuid(7) +".password");
-            //console.log("saveEntry()",filename, entry);
+            
             self.directory.cd("Passwords").write(filename, 
-                self.lookup("Application").api.named("manager").encryptObjToString({
-                    title:entry.title || "New Title " + self.named("passwordlist").items.length,
+                app.api.named("Manager").encryptObjToString({
+                    title:entry.title || "New Title " + self.named("PasswordList").items.length,
                     url:entry.url || "",
                     username:entry.username || "",
                     email:entry.email || "",
                     password:entry.password || "",
                     notes:entry.notes || ""
-            }, self.lookup("Application").api.named("manager").masterpassword));
+            }, app.api.named("Manager").master_password));
         },
         
         deleteEntry:function(filename){
+            var filename = self.lookup('Application').api.named('PasswordList').selection.data.item;
             self.directory.remove("Passwords/"+filename);
         }
         
-        <input type="button" class="button floatleft" value="Add" __click__="self.parent.saveEntry()">
-        <input type="button" class="button float" value="Export" __click__="console.log(self.value, ' clicked')">
-        <input type="button" class="button floatright" value="Remove" __click__="self.parent.deleteEntry(self.lookup('Application').api.named('passwordlist').selection.data.item)">
+        <input type="button" 
+               class="button floatleft" 
+               value="Add" 
+               __click__="self.parent.saveEntry()">
+               
+        <input type="button" 
+               class="button floatright" 
+               value="Remove" 
+               __click__="self.parent.deleteEntry()">
         
-        <view name="passwordlist" class="rel scrollable" 
+        <view name="PasswordList" class="rel scrollable" 
               width="%%{self.parent.width}"
               height="%%{self.parent.height ;; value-self.offsetTop}">
         
@@ -262,57 +306,45 @@
             selectnew:true,
             unselectable:true,
 
-            
-            __preloadingitem__:function(arg){
-                //console.log("__preloadingitem__  ", arg );
-                
-            },
-
+            // In __loadingtem__ we have an opportunity to modify the data used to make the element before it is made.
+            // This is the natural place to operate on data via decryption
             __loadingitem__:function(data){
                 var filedata = self.root.decryptStringToObj(
                     self.root.directory.read("Passwords/"+data.item), 
-                    self.lookup("Application").api.named("manager").masterpassword
+                    self.lookup("Application").api.named("Manager").master_password
                 );
-                copy(filedata,data);
                 
-                //console.log("__loadingitem__",data);
-                
+                copy(filedata,data); // copy(src, dest)
                 return data;
             },
             
-            __loadeditem__:function(item){
-                //console.log("__loadeditem__  ", item.data);  
-            },
-            
+            // Reload the inspector with the new item data when a list item is selected: the archetypical inspector pattern
             __selection__:function(elem){
-                self.root.named('passwordinspector').reload(elem.data);
-                //console.log(elem.data);
+                self.root.named('PasswordInspector').reload(elem.data);
             }
             
-
-            
             <view class="padded">
-                __reloading__:function(data){
-                    //console.log("__reloading__", data);
-                }
-                <div>[=title=]
+                <div> [=title=]
         
-    <view name="passwordinspector" class="abs"
+    <view name="PasswordInspector" class="abs"
         left="%%{self.parent.width;;value*0.33}" 
         width="%%{self.parent.width;;value*0.66}"
         height="%%{self.parent.height}"
         onHeight="%%{self.width, self.height, self.__load__ ;; !self.isReset && self.updateInputSizes(self.width+3, self.height-6)}">
         
+        // Here we grab all the input fields and the textarea and perform our resize, which will be called in the hitch above
         updateInputSizes:function(width, height){
             var notes = self.$named('notes');
             $(self).find("input[type='field']").width(width);
-            //console.log("HEIGHT= ", self.root);
             notes.width(width).height(height-notes[0].offsetTop);
         },
         
         autoload:false,
          
         updateEntry:function(){
+        
+            var app = self.lookup("Application");
+            // marshal data from the inspector feilds
             var data = {
                 title: self.$named("title").val(), 
                 username: self.$named("username").val(),
@@ -321,12 +353,14 @@
                 email: self.$named("email").val(),
                 notes: self.$named("notes").val()
             };
-            var filename = self.lookup("Application").api.named("passwordlist").selection.data.item;
-            //console.log("updateEntry()", data, filename);
-            self.lookup("Application").api.named("listbuttons").saveEntry(filename, data);
+            
+            // Get the corresponding filename from the selected list item the inspector is displaying
+            var filename = app.api.named("PasswordList").selection.data.item;
+            
+            // Save a file under the same name using the gathered data, 
+            app.api.named("ListButtons").saveEntry(filename, data);
         },       
         
-
         __loaded__:function(){
             self.$named('notes').val(self.data.notes);
         }
@@ -336,9 +370,7 @@
                    class="button"
                    value="Update Entry" 
                    __click__="self.parent.updateEntry()">
-                <div class="floatright width100">
 
-              
         <div>
             <div class="fgblue">Title
             <input type="field" name="title" value="[=title=]">
@@ -358,31 +390,14 @@
             <div class="fgblue">Notes
             <textarea name="notes">
             
-            
-<fullview>
+<script id="ExportPlaintext" type="text/nametag">
 
-         
-    __loaded__:function(){
-        self.root.menudata = [
-            {name:'Export', width:210, items:[    
-                {label:'Export Plaintext', shift:true, shortcut:'a', action:function(app){
-                    self.lookup('Application').set('pane','@@aboutpane');
-                }},
-                {label:'Export Encrypted', shift:true, shortcut:'a', action:function(app){
-                    self.lookup('Application').set('pane','@@aboutpane');
-                }}]},
-
-            {name:'Help', width:210, items:[    
-                {label:'About', shift:true, shortcut:'a', action:function(app){
-                    self.lookup('Application').set('pane','@@aboutpane');
-                }}]}
-        ]; 
-    },
-    
-    __ultimately__:function(){
-        var nofiles = self.directory.cd("Passwords").hasFiles();
-        self.lookup("Application").set("pane", nofiles ? "@@returninguserpane" : "@@newuserpane");
+    __ready__:function(){
+        self.$child('displayarea').text(
+                "'"+FormatJSON(self.lookup('Application').api.named('PasswordList').dataFromItems())+"'"
+            );
     }
     
-    
-    <manager autoload="%{false}" name="manager" width="%%{self.parent.width}" height="%%{self.parent.height}">  
+    <textarea name="displayarea" class="width100 height100">
+            
+            
