@@ -32,7 +32,38 @@
 
 <% markup shml %>
 
-<script id="newuser" type="text/nametag">
+<script id="aboutpane" type="text/nametag">
+    __ready__:function(){
+        $(self).removeClass("scrollable");
+    }
+    
+    <view class="abs class bordered rounded left scrollable margined"
+        height="%%{self.lookup('Application').height ;; value*0.9 }"
+        width="%%{self.lookup('Application').width ;; value*0.8 }"
+        left="%%{self.lookup('Application').width;; value*0.1}"
+        top="%%{self.lookup('Application').height;; value*0.025}">
+        
+
+        <div>
+            PasswordSafe is a trustworthy tool for storing the private account info you use every day.
+        <div>
+            You won't find its full feature list in any other password manager.
+        <div>
+            <ul>
+                <li> Double AES encryption
+                <li> Available anywhere you have a browser and the internet
+                <li> Storage service cannot read password data
+                <li> Storage service cannot know you are storing password data
+                <li> Storage can be distributed
+                <li> Import/Export in a human-readable text format
+                <li> Import\/Export in AES cyphertext
+                <li> 100% verifiable source code
+                <li> Open source GUI
+                <li> Free
+        <div>
+            For more information and feature requests, email daniel@tagos.io
+
+<script id="newuserpane" type="text/nametag">
     
     // When the user clicks the [Set Password] button
     setNewPassword:function(){
@@ -107,7 +138,7 @@
     <input type="button" class="button" __click__="self.root.setNewPassword()" value="Set Password">
 
 
-<script id="setpassword" type="text/nametag">
+<script id="returninguserpane" type="text/nametag">
 
     // We use this function to test the first file in the Passwords folder.  
     // If it successfully decrypts we remove the pane and load the manager
@@ -156,7 +187,7 @@
     <input type="password" name="masterpassword" class="width75">
 
     <div>
-    <input type="button" class="button" __click__="self.root.unlockPasswords()" value="Set Password">
+    <input type="button" class="button" __click__="self.root.unlockPasswords()" value="Unlock Passwords">
 
     
 <script id="manager" type="text/nametag">
@@ -192,7 +223,7 @@
         return false;
     }
 
-    <view class="abs scrollable" name="listbuttons"
+    <view class="abs" name="listbuttons"
         width="%%{self.parent.width;;value*.33}"
         height="%%{self.parent.height}">
         
@@ -215,7 +246,8 @@
             self.directory.remove("Passwords/"+filename);
         }
         
-        <input type="button" class="button floatleft" value="Add" onclick="self.parent.saveEntry()">
+        <input type="button" class="button floatleft" value="Add" __click__="self.parent.saveEntry()">
+        <input type="button" class="button float" value="Export" __click__="console.log(self.value, ' clicked')">
         <input type="button" class="button floatright" value="Remove" __click__="self.parent.deleteEntry(self.lookup('Application').api.named('passwordlist').selection.data.item)">
         
         <view name="passwordlist" class="rel scrollable" 
@@ -304,8 +336,7 @@
                    class="button"
                    value="Update Entry" 
                    __click__="self.parent.updateEntry()">
-                <div class="right width100">
-                
+                <div class="floatright width100">
 
               
         <div>
@@ -328,11 +359,30 @@
             <textarea name="notes">
             
             
-<fullview class="scrollable">
+<fullview>
 
+         
+    __loaded__:function(){
+        self.root.menudata = [
+            {name:'Export', width:210, items:[    
+                {label:'Export Plaintext', shift:true, shortcut:'a', action:function(app){
+                    self.lookup('Application').set('pane','@@aboutpane');
+                }},
+                {label:'Export Encrypted', shift:true, shortcut:'a', action:function(app){
+                    self.lookup('Application').set('pane','@@aboutpane');
+                }}]},
+
+            {name:'Help', width:210, items:[    
+                {label:'About', shift:true, shortcut:'a', action:function(app){
+                    self.lookup('Application').set('pane','@@aboutpane');
+                }}]}
+        ]; 
+    },
+    
     __ultimately__:function(){
         var nofiles = self.directory.cd("Passwords").hasFiles();
-        self.lookup("Application").set("pane", nofiles ? "@@setpassword" : "@@newuser");
+        self.lookup("Application").set("pane", nofiles ? "@@returninguserpane" : "@@newuserpane");
     }
+    
     
     <manager autoload="%{false}" name="manager" width="%%{self.parent.width}" height="%%{self.parent.height}">  

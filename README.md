@@ -32,4 +32,4 @@ With either Textmate 2 or Ace, depending on wether I was using TagOS as my IDE o
 
 ##### Who
 
-D. Swartzendruber.
+Daniel Swartzendruber.

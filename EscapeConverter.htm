@@ -104,15 +104,15 @@
                 value="String to Text">
                 
         <view class="rel" width="%%{self.parent.width}" height="%%{self.parent.height;;value-self.offsetTop}" traits="SizedToWindow" name="convertareaview">
-            onHeight:"%%{self.height;;self.$child('convertarea').height(value)}",
-            onWidth:"%%{self.width;;self.$child('convertarea').width(value)}",
+            onHeight:"%%{self.height ;; self.$child('convertarea').height(value-4)}",
+            onWidth:"%%{self.width ;; self.$child('convertarea').width(value-2)}",
             
             // We need to populate the textarea on __ready__ using jQuery because it's the only way to get nametag to respect line breaks or carriage returns in a textarea
             __ready__:function(){
                 self.$child('convertarea').val("    Occasionally you need to convert a block of unformatted text to a Javascript string so you can assign it to a variable.\n\n    This widget lets you do that, or reverse the process and convert an escaped Javascript string into normal text.\n\n    Paste your text to convert here.  Then click a button above."); 
             }
             
-            <textarea class="width100 left clickable"
+            <textarea class="left clickable"
                       name="convertarea"
                       __click__="self.root.clearAreaForFirstTime()">
 </script>
