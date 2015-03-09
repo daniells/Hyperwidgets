@@ -3,17 +3,17 @@
 
 ### What
 
-__Escape Converter__
-----
+* __Escape Converter__
+
 Allows you to escape any raw text in a textarea into a JS string, or the reverse.
 
-__DecimalDegrees__
-----
-Converts LatLng d/m/s or d/m.m to decimal degrees and back again. 
+* __DecimalDegrees__
 
-__Hyperleaf__ 
-----        
-A Data-Driven Leaflet map template 
+Converts LatLng d/m/s or d/m.m to decimal degrees and back again.
+
+* __Hyperleaf__ 
+
+A data-driven Leaflet map template.
 
 ### Why
 
