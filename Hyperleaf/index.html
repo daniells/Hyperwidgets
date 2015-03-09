@@ -1,0 +1,183 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <title>Leaflet API</title>
+
+        <link href="http://cdn.hypertag.io/verbs.css" media="all" rel="stylesheet" type="text/css"></link>
+        <script src="http://cdn.hypertag.io/Hypertag.min.js" type="text/javascript"></script>
+        <script url="http://cdn.hypertag.io/builtins.hyp" type="library/hypertag"></script>
+        
+        <script url="Hyperleaf.hyp" type="library/hypertag"></script>
+        
+        <!-- leaflet components -->
+        <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css"></link>
+        <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+        
+    </head>
+
+    <script id="GeoJSONList" type="text/hypertag">
+        <!-- markup shml -->
+  
+        // Here we fetch a GeoJSON Feature collection from a server.  
+        // The source could be hosted anywhere.
+        list:"GeoJSONExampleMarkers.json",
+
+        // When the .selected class is added to a slected item the .sublabel child of .MarkerList will then have 
+        // all the classes to turn the text white
+        selectable:"lightergrey, silver selected",
+        
+        selectfirst:false,
+        
+        keyselectable:true,
+        
+        autoscrollable:true,
+        
+        multiselectable:false,
+        
+        focusring:false,
+        
+        // When a list element is selected, we will reload the Leaflet map with data from
+        // the selected element.  
+        __selection__:function(elem){
+            // An object to hold GeoJSON parameters to pass to the map.
+            var data_to_pass = {};
+            
+            // If map has coordinates pass them on 
+            if(elem.data.geometry.coordinates){
+                // Leaflet wants things in x,y but lat,lon is y,x so we reverse it
+                data_to_pass.map_marker = elem.data.geometry.coordinates.slice(0,2).reverse();
+                data_to_pass.map_center = data_to_pass.map_marker;
+            }
+            // If the GeoJSON Feature has a scale parameter, pass that to the map
+            if(elem.data.properties.scale)
+                data_to_pass.map_scale = elem.data.properties.scale;
+                
+            // If a name is supplied in the GeoJSON Feature, pass that on to the parameter needed to 
+            // generate text for a map marker popup.
+            if(elem.data.properties.name)
+                data_to_pass.marker_name = elem.data.properties.name;
+            
+            // If the GeoJSON Feature has a scale parameter, pass that to the map
+            if(elem.data.properties.city)
+                data_to_pass.marker_city = elem.data.properties.city;
+            
+            // If the GeoJSON Feature has a scale parameter, pass that to the map
+            if(elem.data.properties.state)
+                data_to_pass.marker_state = elem.data.properties.state;
+                
+            // And now that we have a dictionary of parameters, reload the Leaflet map with them
+            self.root.named('Hyperleaf').reload(data_to_pass);   
+        },
+        
+        __load__:function(){
+            // Select any list item that has a data.properties.name attr matching the the name filed in a query string
+            // On page load
+            
+            if($.QueryString.name)
+                for(var i = 0; i !== self.items.length; i++){
+                    if(self.items[i].data.properties.name == $.QueryString.name){
+                        self.items[i].setSelection();
+                        break;
+                    }
+                }
+                    
+            else
+                self.items.first().setSelection();
+        }
+        <div class="width100 arial toppadded bottompadded bottombordered">
+            <div class="label lightgreytextshadow smallleftpadded smallbottompadded left">
+                [=properties.name=]
+            <div class="sublabel evensmaller fgdimgray smallrightpadded right">
+                [=properties.city=], [=properties.state=]
+    </script>
+        
+    <script id="MapInspector" type="text/hypertag">
+        <!-- markup shml -->
+    
+        <MarkerList name="GeoJSONList"
+                    class="rel scrollabley eurostyle"
+                    height="%%{self.parent.height;;value}"
+                    width="200">
+                
+        <Hyperleaf name="Hyperleaf"
+                   class="abs" 
+                   height="%%{self.parent.height;;value-20}"
+                   width="%%{self.parent.width;;value-220}"
+                   left="%%{self.parent.width;;200}"
+                   autoload="%{false}">
+    
+            __init__:function(){
+                //set up a listen on self.goog_geocode_result
+                listen(self, 'goog_geocode_result', function(){
+                    var marker_contents = self.named('marker_contents');
+                    // if there are marker contents, put a new div with the geocode result inside it
+                    if(marker_contents){
+                       var geocode_display_elem = document.createElement('div');
+                       $(geocode_display_elem).text(self.goog_geocode_result).addClass('evensmaller');
+                       marker_contents.appendChild(geocode_display_elem);
+                    }
+                    //$(self).find(".leaflet-popup-pane").width("230");
+                    //$(self).find(".leaflet-popup-content").width("230");
+                });
+            },
+            __loading__:function(){
+                // Prerform the address lookup
+                self.googleGeoCode(self.map_marker.slice(0, 2), true, false);
+            }
+    </script>
+    <script id="AppContainer" type="text/hypertag">
+        <!-- markup shml -->
+        
+        <view class="width100 bottombordered arial" 
+              height="%{55}">
+            
+            <div class="height20">
+            
+            <div class="cell right top width20 height100">
+            
+            <div class="cell width65 height100 middle top biggest greytextshadow">
+                Hackerspaces in the United States
+        
+            <div class="cell width15 height100 left top center smallest noshadow">
+                <div>
+                    Created by 
+                    <a href="mailto:somanova@gmail.com" target="_blank">
+                        Dan Swartzendruber
+                <div>
+                    Adressess from 
+                    <a href="https:\/\/developers.google.com/maps/documentation/geocoding"  target="_blank">
+                        Google Geocoding API
+                <div>
+                    Templating by  
+                    <a href="http:\/\/hypertag.io"  target="_blank">
+                        Hypertag
+            
+        <MapInspector class="rel"
+                      height="%%{self.parent.height;;value-self.offsetTop}"
+                      width="%%{self.parent.width}">
+
+    </script>
+    <script id="HyperleafInvocation" type="text/hypertag">
+        <!-- markup shml -->
+        <Hyperleaf height="%%{self.parent.height;;value-20}" 
+                   width="%%{self.parent.width-10}">	
+            
+            //geojson_source:"geojson/HEALTH_HealthClinics.geojson",
+            //geojson_source:"geojson/BOUNDARY_Zipcodes.geojson",
+            //geojson_source:"geojson/HISTORICAL_HistoricDistricts.geojson",
+            //geojson_source:"geojson/DEMOGRAPHICS_BlockGroups1990.geojson",
+            //geojson_source:"geojson/TestFeatureGroup.json",
+            
+            geojson_source:"geojson/Aleutians East.geo.json",
+            //geojson_source:""
+
+            //map_center:[42.403348252467865,-71.13427183602411],
+            map_scale:6,
+            use_geojson_bounds:true
+    </script>
+    <body>
+        <div class="hypertag whiteGradient" template="HyperleafInvocation" traits="SizedToWindow"/>
+            
+    </body>
+</html>

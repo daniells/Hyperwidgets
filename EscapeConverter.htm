@@ -8,34 +8,30 @@
     <!--
         EscapeConverter
         
-        This is a Nametag.js app which converts plaintext to escaped strings-
+        This is a Hypertag.js app which converts plaintext to escaped strings-
         and back again.
 
         d.swartzendruber, c2014
         MIT License: http://opensource.org/licenses/MIT   
     -->
+
     
-    <!--link href="http://cdn.tagos.io/verbs.css" media="all" rel="stylesheet" type="text/css"></link-->
-    <link href="../nametag/verbs.css" media="all" rel="stylesheet" type="text/css"></link>
+    <!-- hypertag components -->
+    <link href="http://cdn.hypertag.io/verbs.css" media="all" rel="stylesheet" type="text/css"></link>
+    <script src="http://cdn.hypertag.io/Hypertag.min.js" type="text/javascript"></script>
+    <script url="http://cdn.hypertag.io/builtins.hyp" type="library/hypertag"></script>
     
-    <!--script src="http://cdn.tagos.io/NametagTemplates.min.js" type="text/javascript"></script-->
-    <script src="../nametag/NametagTemplates.min.js" type="text/javascript"></script>
-    <!-- script src="../nametag/src/jquery-2.0.0.min.js" type="text/javascript"></script>
-    <script src="../nametag/src/jquery-tmpl-nametag.js" type="text/javascript"></script>
-    <script src="../nametag/src/JSHint.js" type="text/javascript"></script>
-    <script src="../nametag/src/NametagBasic.js" type="text/javascript"></script -->
-       
+
     <style>
         html{padding:0; margin: 0;}
         body{padding:0; margin: 0;}
         .nopad{padding:0; margin: 0;}
         .wrapx{ overflow-x:none !important;}
     </style>
-    
 </head>
 
 
-<script id="EscapeConverter" type="text/nametag">
+<script id="EscapeConverter" type="text/hypertag">
     <!-- markup shml -->
     
     // flag to tell us if the user has touched the text area yet
@@ -93,21 +89,36 @@
           height="%%{self.parent.height}">
                     
         <div class="width100" name="buttoncontainer">
-            <input type="button" class="button width33 rightpadded"
+            
+            <input type="button" 
+                class="button width33 rightpadded"
                 onclick="self.root.StringParse()"
                 value="Text to String">
-            <input type="button" class="button width33 rightpadded"
+                
+            <input type="button" 
+                class="button width33 rightpadded"
                 onclick="self.root.clearAreaForFirstTime(true)"
                 value="Clear">        
-            <input type="button" class="button width33 leftpadded"
+            
+            <input type="button" 
+                class="button width33 leftpadded"
                 onclick="self.root.StringParse(true)"
                 value="String to Text">
                 
-        <view class="rel" width="%%{self.parent.width}" height="%%{self.parent.height;;value-self.offsetTop}" traits="SizedToWindow" name="convertareaview">
-            onHeight:"%%{self.height ;; self.$child('convertarea').height(value-4)}",
-            onWidth:"%%{self.width ;; self.$child('convertarea').width(value-2)}",
+        <view class="rel" width="%%{self.parent.width}" 
+            height="%%{self.parent.height;;value-self.offsetTop}" 
+            traits="SizedToWindow" 
+            name="convertareaview">
             
-            // We need to populate the textarea on __ready__ using jQuery because it's the only way to get nametag to respect line breaks or carriage returns in a textarea
+            // Hitch our textarea so stays securely in the window: 
+            // overflow seems to interfere with key capture making it hard to type
+            onHeight:"%%{self.height ;; self.$child('convertarea').height(value*0.95 , console.log(self.$child('convertarea')))}",
+            onWidth:"%%{self.width ;; self.$child('convertarea').width(value*0.98)}",
+            //onLeft::"%%{self.width ;; self.$child('convertarea').left(1)}",
+            //onTop::"%%{self.height ;; self.$child('convertarea').top( self.$child('convertarea').offsetTop - 4)}",
+            
+            // We need to populate the textarea on __ready__ using jQuery because it's the only way
+            // to get hypertag to respect line breaks or carriage returns in a textarea
             __ready__:function(){
                 self.$child('convertarea').val("    Occasionally you need to convert a block of unformatted text to a Javascript string so you can assign it to a variable.\n\n    This widget lets you do that, or reverse the process and convert an escaped Javascript string into normal text.\n\n    Paste your text to convert here.  Then click a button above."); 
             }
@@ -117,7 +128,8 @@
                       __click__="self.root.clearAreaForFirstTime()">
 </script>
 
-<script id="SizedToWindow" type="text/nametag">
+<script id="SizedToWindow" type="text/hypertag">
+    
     __init__:function(){
         var resize = function(){
             self.set('width', window.innerWidth-5);
@@ -126,14 +138,16 @@
 
         $(window).bind("resize", resize);
 
-        Nametag.GUI.focus.setLayer(self);
-        Nametag.GUI.focus.setWindow(self);
+        Hypertag.GUI.focus.setLayer(self);
+        Hypertag.GUI.focus.setWindow(self);
 
         resize();
     }
 </script>
 
-<div class="nametag" template="EscapeConverter" traits="SizedToWindow"/>
+<div class="hypertag" 
+    template="EscapeConverter" 
+    traits="SizedToWindow"/>
 
 </body>
 </html>

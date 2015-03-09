@@ -1,0 +1,288 @@
+  /***********************************************************/
+ /**  HyperLeaf: a Hypertag template Library of GIS tools  **/
+/***********************************************************/
+/***    v 0.1 
+ ***
+ ***    Contains:
+ ***      <HyperLeaf>         A GeoJSON driven Leaflet map that supports nested FeatureLists
+ ***      <GoogleGeoCode>     A Google (reverse)geocoding interface. Use as a trait.
+ ***    License:
+ ***      © Daniel Swartzendruber, 2015 
+ ***      MIT License for all users
+ ***/
+
+/*    HyperLeaf: a Leaflet API wrapper for Hypertag.
+ *
+ *       Hyperleaf will take any valid GeoJSON object and generate a Leaflet map with it.
+ *       When asked it will automatically set the bounds of the map to the GeoJSON.
+ *       layers and Layer groupings that mirror the structure of  Features in the GeoJSON object.
+ */
+<script id="HyperLeaf" type="text/hypertag">
+    <!-- markup shml -->
+
+      /******************/
+     /* Control Params */
+    /******************/
+
+    // A map center to start with
+    map_center:false,
+    // A scale to use, 0-18
+    map_scale:false,
+
+    // The URL of your GeoJSON source.
+    geojson_source: false, 
+
+    // If passed true the map uses the outermost points in the GeoJSON as the map bounds.
+    // If passed an array [topandright,bottomandleft] it adds that many degrees of margin to the area of interest.
+    use_geojson_bounds:false,
+    // This overrides map_center and map_scale
+    // Request for GeoJSON is an asyncronous ajax call, so the Leaflet map will not fitBounds() until the data is loaded.
+
+      /************************/
+     /* Evaluated Parameters */
+    /************************/
+
+    // The evaluated GeoJSON from geojson_source, fetched by $.ajax() req on __init__
+    evaluated_geojson: false, 
+    // Every map must have its own guid.
+    map_id: MD5(Date.now().toString() + Math.random().toString()), 
+    // this will be a reference to the map when it is created
+    map: false, 
+    // this is an object graph of references to all layers and layergroups in the map.  you can iterate over it to navigate the map.
+    map_tree: false, 
+
+      /*************/
+     /* Machinery */
+    /*************/
+
+    // Given a GeoJSON object find the widest Southwest and Northeast corners it describes
+    // and return an L.bounds object describing that rectangle
+    findOuterBoundsInGeoJSON:function(geojson, extend_x_degrees, extend_y_degrees){
+        //            sw  ne
+        var bounds = [[], []];
+        
+        var coordsToCompare = [];
+        
+        // define a function to test a lat-lon array for coordinates that lie outside bounds[]
+        // and extend them if they do.
+        var compareAndUpdateBounds = function(lon_lat_array){
+            //sw
+            bounds[0][0] = bounds[0][0] ? Math.min(bounds[0][0], lon_lat_array[0]) : lon_lat_array[0];
+            bounds[0][1] = bounds[0][1] ? Math.min(bounds[0][1], lon_lat_array[1]) : lon_lat_array[1];
+            //ne
+            bounds[1][0] = bounds[1][0] ? Math.max(bounds[1][0], lon_lat_array[0]) : lon_lat_array[0];
+            bounds[1][1] = bounds[1][1] ? Math.max(bounds[1][1], lon_lat_array[1]) : lon_lat_array[1];
+        };
+        
+        // Helper functions for the recursive function below
+        var isArray = function(obj){
+            return obj.constructor === Array ? true: false;
+        };
+        var isNum = function(obj){
+            return obj.constructor === Number ? true: false;
+        };
+        var isObj = function(obj){
+            return obj.constructor === Object ? true: false;
+        };
+        var isArrayOnlyNumbers = function(array){
+            var result = true;
+            for(var i = 0; i!== array.length; i++){
+                result = array[i].constructor === Number && result ? true: false;
+            }
+            return result;
+        };
+        
+        // define a recursive function to test nexted geojson objects for bound extreminites
+        var findCoordinatesInGeoJSON = function(item){
+            if(isArray(item)){
+                // coordinates can be [x,y] or [x,y,z]
+                if( (item.length === 2 || item.length === 3) && isArrayOnlyNumbers(item) ){
+                        // Base case
+                        compareAndUpdateBounds(item);
+                }
+                else{
+                    for(var i = 0; i !== item.length; i++){
+                        findCoordinatesInGeoJSON(item[i]);
+                    }
+                }
+            }
+            else if(isObj(item)){
+                for(var key in item){
+                    findCoordinatesInGeoJSON(item[key]);
+                }
+            }
+        };
+            
+        // execute recursive function with top-level GeoJSON object
+        findCoordinatesInGeoJSON(geojson);
+        
+        return [ 
+                [ bounds[0][1], bounds[0][0] ],
+                [ bounds[1][1], bounds[1][0] ]
+            ];
+    },
+    
+    // A test initalization
+    testGeoJSONInit:function(){
+        L.geoJson(self.evaluated_geojson)
+        .addTo(self.map);
+    },
+    
+      /**********/
+     /* Events */
+    /**********/
+    
+    __load__: function(){
+        
+        // Create the map
+        self.map = L.map(self.map_id);
+        
+        // Add the mandatory attribution for OpenStreetMap and Leaflet
+        L.tileLayer('http:\/\/{s}.tile.osm.org\/{z}\/{x}\/{y}.png', {
+                attribution: '&#169; {-a href="http:\/\/openstreetmap.org\/copyright"-}OpenStreetMap{-\/a-} contributors'
+            })
+            .addTo(self.map);
+            
+        self.map_center &&
+            self.map.setView(self.map_center, self.map_scale);
+        
+
+        // Set up a listen on our evaluated GeoJSON attribute, and trigger map creation.
+        self.listen(self, "evaluated_geojson", function(){
+            // Perform an init method
+            self.testGeoJSONInit();
+            
+            // if use_geojson_bounds is enabled, generate geometry according to rules noted above and invoke fitBounds() 
+            if(self.use_geojson_bounds){
+                var options = {};
+                var bounds = self.findOuterBoundsInGeoJSON(self.evaluated_geojson);
+                if(self.use_geojson_bounds.constructor === Array){
+                    options.padding = self.use_geojson_bounds;
+                }
+                // apply map.fitBounds()
+                self.map.fitBounds( bounds , options);
+            }
+        }); 
+        if(self.geojson_source.constructor === String){
+            // Fetch the GeoJSON to parse in an ajaxy way and set() it on self.evaluated_geojson when the callback returns.
+            $.ajax({
+                data:    {},
+                async:   true, 
+                dataType: "json",
+                type:    "GET",
+                url:     self.geojson_source,
+                // the callback function
+                complete: function(data, textStatus){
+                    // If the AJAX call returned sucessfully
+                    if(textStatus === "success")
+                      set(self, 'evaluated_geojson', data.responseJSON);
+                    }
+                }
+            );
+        }
+        else if(self.geojson_source.constructor === Object){
+            set(self, 'evaluated_geojson', self.geojson_source);
+        }
+    }
+
+
+    <view id="[=self.map_id=]"
+          class="padded"
+          height="%%{self.parent.height}"
+          width="%%{self.parent.width}">
+
+</script>
+    
+
+
+
+/*     Google Geocode 
+ *
+ *     This places the AJAX method self.googleGeoCode() on your tag.
+ *     It sets() results on self.goog_geocode_result so listen to that that for results.
+ *     When it is passed a [lat,lon] it returns a string addresss.
+ *     When it is passed a string address it outputs a [lat,lon].
+ */
+<script id="GoogleGeoCode" type="text/hypertag">
+    <!-- markup shml -->
+    // Set a listen on this before using self.googleGeoCode(), and get your result that way if you set call it with sync false.
+    // Otherwise the googleGeoCode() method returns the result syncronously.
+    goog_geocode_result:false,
+    
+    // self.googleGeoCode(lat_long_or_address[, async][, line_breaks][, https][, full_result][, api_key]) 
+    // takes an array of lat,long or a street address as a string, and returns 
+    // reverse geocding as a street addess(string) or geocoding as a latlon(array)
+    //
+    // Output is set() on self.goog_geocode_result so self.listen() to that property on your Hypertag for the result 
+    //
+    // lat_long_or_address :  either an array in the form [lat,long] or a string in the form "1428 Elm Street.."
+    // async               :  a boolean indicating wether or not to make the 
+    // https               :  a boolean determining wether to use SSL or not.  Optional.
+    // line_breaks         :  a boolean determining wether the address has newlines between significant sections
+    // full_result         :  a boolean indicating wether to simply return the completeobject result
+    // api_key             :  a string; an API key tied to a google account.  Google uses this for quota management. Required for high-request applications.        
+    //
+    googleGeoCode:function(lat_long_or_address, async, line_breaks, full_result, https, api_key){
+
+        // if the user wants a secure connection 
+        https = https?"s":"";
+        
+        // a flag to tell us if we're returning the latlong of an adddress
+        var reverse_geocode = false;
+        
+        // An obj to hold the ajax params
+        var get_args = {
+            data:    {},
+            async:   async?true:false, 
+            dataType: "json",
+            type:    "GET",
+            url:     "http" + https + ":\/\/maps.googleapis.com/maps/api/geocode/json",
+            // the callback function
+            complete: function(data, textStatus){
+                // If the AJAX call returned sucessfully
+                if(textStatus === "success"){
+                    // if google reports success
+                    if(data.responseJSON.status === "OK" ){
+                        // if the invoker requested the full result object from google
+                        if(full_result)
+                            self.goog_geocode_result = data.responseJSON;
+                        // if they didn't they just get the result based on the other params
+                        else{
+                            self.goog_geocode_result = reverse_geocode ? 
+                                [data.responseJSON.results[0].geometry.location.lat, data.responseJSON.results[0].geometry.location.lng] :
+                                reverse_geocode ? self.goog_geocode_result = data.responseJSON.results[0].formatted_address.replace(/,\s/gi,"{-br \/-}") :data.responseJSON.results[0].formatted_address;
+                        }
+                    }
+                    else if(data.responseJSON.status === "INVALID_REQUEST"){
+                        self.goog_geocode_result = "Invalid data for Google geocoding.";
+                    }
+                    else if(data.responseJSON.status === "OVER_QUERY_LIMIT"){
+                        self.goog_geocode_result = "You're over your Google geocoding query limit.";
+                    }
+                    else if(data.responseJSON.status === "REQUEST_DENIED"){
+                        self.goog_geocode_result = "Google is denying your geocoding request.";
+                    }
+                    else if(data.responseJSON.status === "UNKNOWN_ERROR"){
+                        self.goog_geocode_result = "Google geocoding server error.";
+                    }
+                }
+                // Trigger listeners
+                send(self, 'goog_geocode_result');
+            }
+        };
+        //If the user passed an array of [lat,long]
+        if(lat_long_or_address.constructor === Array){
+            get_args.data.latlng = lat_long_or_address[0].toString() + "," + lat_long_or_address[1].toString();
+        }
+        // If the user passed a string, e.g. an address
+        if(lat_long_or_address.constructor === String){
+            get_args.data.address = lat_long_or_address.replace(/\s{1,}/gi,"+");
+            reverse_geocode = true;
+        }
+        // If the user passed an api_key add that to the request
+        if(api_key){
+            get_args.data.key = api_key.toString();
+        }
+        result = $.ajax(get_args);
+    }
+</script>

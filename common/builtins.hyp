@@ -1,0 +1,355 @@
+
+<!-- these styles present a good single page application layout -->
+<style>
+    html{
+        padding:0px;
+        margin:0px;
+        overflow:hidden;
+    }
+
+    body{
+        padding:0px;
+        margin:0px;
+        overflow:hidden;
+    }
+</style>
+
+<!-- text?? Shorthand for a span-based hypertag. -->
+<script id="text" type="text/hypertag" tagtype="span"></script>
+
+<!-- image?? shorthand for a img-based hypertag. -->
+<script id="image" type="text/hypertag" tagtype="img">
+    __init__:function(){
+        $(self).load(function(){
+            self.parent.send('width');
+            self.parent.send('height');
+        });
+    }
+</script>
+    
+<!-- fullview?? A simple mechanism to take the dimensions of the hypertag parent. -->
+<script id="fullview" type="text/hypertag">
+    width:"%%{self.parent.width}",
+    height:"%%{self.parent.height}"
+</script>
+  
+<!-- SizedToWindow?? Cause a hypertag to take the dimensions of the window, usually to create cascading hitches. -->  
+<script id="SizedToWindow" type="text/hypertag">
+    /* on init, set it up so this view will change size when the
+       window does. also evaluate it for the first time */
+
+    __init__:function(){
+        window.addEventListener("resize", self.resizeFunction, true);
+        window.addEventListener("orientationchange", self.resizeFunction, true);
+        Hypertag.GUI.focus.setLayer(self);
+        Hypertag.GUI.focus.setWindow(self);
+        self.resizeFunction();
+    },
+
+    /* I will set myself to the size of the window when called*/
+    resizeFunction:function(){
+        self.set('width', window.innerWidth);
+        self.set('height', window.innerHeight);      
+    }
+</script>
+    
+<!-- DroppableShadow?? A trait to make an listitem shadowed when its being hovered over by a compatible droptype. -->
+<script id="DroppableShadow" type="text/hypertag">
+    __dragover__:function(item){
+        $(item).addClass("bigshadowed");
+    },
+    
+    __dragout__:function(item){
+        $(item).removeClass("bigshadowed");
+    }
+</script>
+    
+<!-- DroppableOutline?? A trait to make an listitem outlined when its being hovered over by a compatible droptype. -->
+<script id="DroppableOutline" type="text/hypertag">
+    __dragover__:function(item){
+        $(item).css("outline-style", "solid").css("outline-width", "2px").css("outline-color", self.DroppableOutline$ || "white");
+    },
+
+    __dragout__:function(item){
+        $(item).css("outline-style", "none");
+    }
+</script>
+    
+<!-- DroppableShadow?? A trait to make an listitem bordered when its being hovered over by a compatible droptype. -->
+<script id="DroppableBorder" type="text/hypertag">
+    __dragover__:function(item){
+        $(item).css("border-style", "solid").css("border-width", "2px").css("border-color", self.DroppableBlueBorder$ || "Blue");
+    },
+
+    __dragout__:function(item){
+        $(item).css("border-style", "none");
+    }
+</script>
+    
+<!-- ReorderableChildren?? A trait to apply logic that makes a draggable list rearrageable by creating new items, and removing the originals. -->
+<script id="ReorderableChildren" type="text/hypertag">
+    droponself:true,
+    droponothers:false,
+    droponchild:true,
+
+    __drop__:function(items, child, droptype){
+        console.log("items", items[0].data);
+        if(child)
+            for(var i = 0; i != items.length ; i ++)
+                self.insertItems(items[i].data, child);
+        else
+            for(var i = 0; i != items.length ; i ++)
+                this.appendItems(items[i].data);
+                
+        for(var i = 0; i != items.length ; i ++)
+            items[i].remove(true);
+    }
+</script>
+    
+<!-- MoveableChildren?? A trait to apply logic that makes a drag list rearrageable by moving items to the drop target. -->
+<script id="MoveableChildren" type="text/hypertag">
+    droponself:true,
+    droponcontainer:true,
+    droponchild:true,
+    
+    /* this differs from reorderable children by moving the instance
+       itself via insertBefore as opposed to insertItems, which removes
+       and readds by data alone.  */
+    __drop__:function(items, child, droptype){
+        /* easy! integrated it into hypertag. */
+        console.log("droptype, self.drag", droptype, self.drag, droptype.intersect(self.drag));
+        if(droptype.intersect(self.drag))
+            self.moveItems(items, child);  
+    }
+</script>
+
+<!-- DroppableMove?? A trait to apply the logic of removing an item from a drag source to a drop target. -->
+<script id="DroppableMove" type="text/hypertag">
+    __dropping__:function(items, target, droptype){
+        for(var i = 0; i != items.length ; i ++)
+            items[i].remove(true);
+    },
+
+    __drop__:function(items, droptype){
+        for(var i = 0; i != items.length ; i ++)
+            this.appendItems(items[i].data);
+    }
+</script>
+    
+<!-- BrowserFileDroppable?? A trait that will pass along the data from a single file dropped from an operating system browser onto a hypertag (no drag behavior needed). The trait-property should be a function that receives the data. -->
+<script id="BrowserFileDroppable" type="text/hypertag">
+    <!-- markup shml -->
+    
+    __loaded__:function(){
+        var cancel = function(e){
+            if (e.preventDefault) { e.preventDefault(); }
+            return false;
+        };
+
+        addEventHandler(self, 'dragover', cancel);
+        addEventHandler(self, 'dragenter', cancel);
+       
+        addEventHandler(self, 'drop', function (e){
+            console.log("FOO");
+            //get window.event if e argument missing (in IE) 
+            e = e || window.event; 
+           
+            //stops the browser from redirecting off to the image.
+            if (e.preventDefault)
+                e.preventDefault(); 
+
+            var dt = e.dataTransfer;
+            var files = dt.files;
+           
+            for(var i = 0; i != files.length; i ++){
+                var file = files[i];
+                var reader = new FileReader();
+
+                addEventHandler(reader, 'loadend', function(e, file){
+                   
+                    //UNTESTED FEATURE
+                    if(self.ResizeImageFlag){
+                        var image = new Image();
+                       
+                        image.src = this.result;
+
+                        image.onload = function() {
+                            var maxWidth = 220,
+                                maxHeight = 220,
+                                imageWidth = image.width,
+                                imageHeight = image.height;
+                           
+                            if(imageWidth > imageHeight){
+                                if(imageWidth > maxWidth){
+                                    imageHeight *= maxWidth / imageWidth;
+                                    imageWidth = maxWidth;
+                                }
+                            }
+                           
+                            else{
+                                if (imageHeight > maxHeight) {
+                                    imageWidth *= maxHeight / imageHeight;
+                                    imageHeight = maxHeight;
+                                }
+                            }
+                           
+                            var canvas = document.createElement('canvas');
+                            canvas.width = imageWidth;
+                            canvas.height = imageHeight;
+                           
+                            var ctx = canvas.getContext("2d");
+                            ctx.drawImage(this, 0, 0, imageWidth, imageHeight);
+                           
+                            // The resized file ready for upload
+                            var finalFile = canvas.toDataURL(fileType);
+                           
+                            self.BrowserFileDroppable$(finalFile);
+                        };
+                    }
+                   
+                    //NORMAL PATH; 
+                    else
+                        self.BrowserFileDroppable$(this.result);
+                });
+
+                //attach event handlers here...
+                reader.readAsDataURL(file);
+            }
+
+            return false;
+        });
+    }
+</script>
+    
+<!-- Hoverselectable?? A trait to make anything do something when hovered over during a drag and drop operation. -->
+<script id="Hoverselectable" type="text/hypertag">
+    __loaded__:function(){
+        /* note onhoverselected is here only so we can put the trait on tags that dont allow
+           inner text, such as fileimg (or img tags in general) */
+        makeHoverSelectable(self, self.Hoverselectable$ || self.onhoverselected);
+    }
+</script>      
+         
+<!-- slidetemplates?? Implmented as a hypertag list of templates to invoke, cause each template to be displayed by animation (and loaded for the first time if not loaded) by calling show with the index of the desired template to show. -->    
+<script id="slidetemplates" type="text/hypertag" classes="rel nooverflow">
+    <!-- markup shml -->
+    //given an index, scroll the view to it
+    
+    vertical:false,
+
+    show:function(idx, disableAnimation){
+        self._last_idx = idx;
+        self.firstChild.items[idx].isReset && self.firstChild.items[idx].reload();
+        
+        var attrs = self.vertical ? {scrollTop:idx*self.height} : {scrollLeft:idx*self.width};
+        animate(self, attrs, disableAnimation ? 0 : Hypertag.GUI.duration);
+    },
+
+    onSizing:"%%{self.width, self.height ;; self._last_idx !== undefined && self.focusApp(self._last_idx, true)}"
+
+    <view class="rel" 
+          height="%%{self.parent.vertical ?? self.parent.height ;; self.parent.height :: self.parent.height * self.root.sections.length}"
+          width="%%{self.parent.vertical ?? self.parent.width ;; self.parent.width :: self.parent.width * self.root.sections.length}">
+      
+        list:self.root.sections
+    
+        <view autoload="%{false}"
+              template="[=item=]"
+              class="[=iftest(self.root.vertical, '', 'cell')=] rel top morebottomrounded"
+              height="%%{self.root.height}"
+              width="%%{self.root.width}">
+</script>
+    
+<!-- slidelist?? Implemented as a hypertag list, cause each list item to be displayed by animation (and loaded for the first time if not loaded) by calling show with the index of the desired template to show. -->             
+<script id="slidelist" type="text/hypertag" classes="rel nooverflow">
+    <!-- markup shml -->
+    //given an index, scroll the view to it
+    
+    vertical:false,
+
+    show:function(idx, disableAnimation){
+        self._last_idx = idx;
+        self.items[idx].isReset && self.items[idx].reload();
+        
+        var attrs = self.vertical ? {scrollTop:idx*self.height} : {scrollLeft:idx*self.width};
+        animate(self, attrs, disableAnimation ? 0 : Hypertag.GUI.duration);
+    },
+
+    onSizing:"%%{self.width, self.height ;; self._last_idx !== undefined && self.focusApp(self._last_idx, true)}",
+    
+    height:"%%{self.vertical ?? self.parent.height ;; self.parent.height :: self.parent.height * self.items.length}",
+    width:"%%{self.vertical ?? self.parent.width ;; self.parent.width :: self.parent.width * self.items.length}"
+</script>
+    
+<!-- RenamableField?? A view that contains either a div or input field (name='field'), populated by self.data.item, that will switch between showing the text or input field when the 'renaming' property is toggled. The '__renaming__' delegate will fire() when a successful renaming is finished which can return false to prevent the renaming. -->
+<script id="RenamableField" type="text/hypertag">
+    <!-- markup shml -->
+    
+    $field:"[name='field']",
+    
+    stopRename:function(){
+        var val = self.$field.val();
+        
+        if(self.fire('__renaming__', val) !== false)
+            self.data.item = val;
+        
+        self.reload({renaming:false});
+    },
+    
+    startRename:function(){
+        !self.renaming && self.reload({renaming:true});
+    },
+    
+    __dblclick__:function(){
+        self.startRename();
+    },
+
+    __load__:function(){
+        self.renaming &&
+            self.$field
+                .keydown(function(e){
+                    if(e.keyCode === 13 || e.keyCode === 27)
+                        self.stopRename();
+                })
+                .blur(function(e){
+                    self.stopRename();
+                });  
+    }
+
+    <span>
+        {{if self.renaming}}
+            <input name="field" type="field" value="[=item=]">
+        {{else}}
+            <span class="label">[=item=]
+        {{/if}}
+</script>
+        
+<!-- ModalPopup?? A mechanism that will, by undergoing reload(), present both a faded background (interrupting clicks) and a central area. In the central area, a template you specify in the 'show' property will be invoked. That template can close the popup by calling self.lookuptemplate('ModalPopup').reset() which will find the ModalPopup above it and reset() it. -->
+<script id="ModalPopup" type="text/hypertag">
+    <!-- markup shml -->
+
+    classes:"abs hidden",
+    height:"%%{self.parent.height}",
+    width:"%%{self.parent.width}",
+    autoload:false,
+       
+    __load__:function(){
+        $(self).removeClass("hidden");
+    },
+    
+    __reset__:function(){
+        $(self).addClass("hidden");
+    }
+
+    <fullview class="abs faded vertBlackGradient">
+
+    <div class="abs">
+        <fullview class="table middle center">
+    
+            <view template="%{self.lookup('show')}" 
+                class="rel padded rounded fgwhite vertBlackGradient windowshadowed_active center middle bigger"
+                width="%%{self.parent.width;;value/3}"
+                left="%%{self.parent.width;;value/3}">
+</script>
+
+

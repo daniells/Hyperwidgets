@@ -1,0 +1,111 @@
+  { "type": "FeatureCollection",
+    "features": 
+    [
+        { "type": "Feature",
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                            [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
+                        ]
+                    },
+            "properties": {
+                "prop0": "value0",
+                "prop1": 0.0
+            }
+        },
+        { "type": "Feature",
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                            [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
+                        ]
+                    },
+            "properties": {
+                "prop0": "value0",
+                "prop1": 0.0
+            }
+        },
+        { "type": "Feature",
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                            [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
+                        ]
+                    },
+            "properties": {
+                "prop0": "value0",
+                "prop1": 0.0
+            }
+        },
+    { "type": "Feature",
+        "geometry": {
+            "type": "MultiPoint",
+            "coordinates": [
+                        [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
+                    ]
+                },
+        "properties": {
+            "prop0": "value0",
+            "prop1": 0.0
+        }
+    },
+        { "type": "Feature",
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                            [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
+                        ]
+                    },
+            "properties": {
+                "prop0": "value0",
+                "prop1": 0.0
+            }
+        },
+        { "type": "Feature",
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                            [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
+                        ]
+                    },
+            "properties": {
+                "prop0": "value0",
+                "prop1": 0.0
+            }
+        },
+        { "type": "Feature",
+            "geometry": {
+                "type": "MultiPoint",
+                "coordinates": [
+                            [102.0, 0.0], [103.0, 1.0], [104.0, 0.0], [105.0, 1.0]
+                        ]
+                    },
+            "properties": {
+                "prop0": "value0",
+                "prop1": 0.0
+            }
+        }
+   ]
+}
+
+
+
+
+
+
+
+
+
+
+                        { lat: 37.029454, 
+                          lon: -116.012438, 
+                          popuptext: "example popup text" },
+                        { lat: 37.04, 
+                          lon: -116.05, 
+                          popuptext: "example popup text" }, 
+                        { lat: 37.2, 
+                          lon: -116.1, 
+                          popuptext: "example popup text" },
+                        { lat: 36.9, 
+                          lon: -117.9, 
+                          popuptext: "example popup text" }            

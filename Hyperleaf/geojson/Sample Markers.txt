@@ -1,0 +1,23 @@
+        marker_data:[
+            { 
+                lat: 37.150000, 
+                lon: -116.100000, 
+                popup_text: "Site 1" 
+            },
+            {
+                lat: 37.100000, 
+                lon: -116.090000, 
+                popup_text: "Site 2" 
+            },        
+            {
+                lat: 37.040000, 
+                lon: -116.050000, 
+                popup_text: "Site 3" 
+            }, 
+            {
+                lat: 37.029454, 
+                lon: -116.012438, 
+                popup_text: "Site 4" 
+            }
+        ],
+        
